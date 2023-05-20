@@ -1,10 +1,8 @@
 import "reflect-metadata"
-import { DataSource } from "typeorm"
-import { User } from "./entity/User"
-import {Payment} from "./entity/Payment";
-import {Order} from "./entity/Order";
+import {DataSource, DataSourceOptions} from "typeorm"
+import {SeederOptions} from "typeorm-extension";
 
-export const AppDataSource = new DataSource({
+const options: DataSourceOptions & SeederOptions = {
     type: "mysql",
     host: "127.0.0.1",
     port: 3306,
@@ -13,8 +11,11 @@ export const AppDataSource = new DataSource({
     database: "lulu",
     synchronize: false,
     logging: false,
-    // entities: ["src/entity/**/*.ts"],
-    entities: [User, Payment, Order],
+    entities: ["src/entity/**/*.ts"],
+    seeds: ["src/db/seeds/**/*{.ts,.js}"],
+    factories: ["src/db/factories/**/*{.ts,.js}"],
     migrations: ["src/migration/**/*.ts"],
     subscribers: ["src/subscriber/**/*.ts"],
-})
+}
+
+export const AppDataSource = new DataSource(options)

@@ -1,28 +1,33 @@
 import { AppDataSource } from "./data-source"
-import * as express from 'express'
-import * as bodyParser from "body-parser";
+import express from "express"
+import bodyParser from "body-parser";
 import routes from "./routes";
-const SERVER_PORT = 3000;
+import cors from 'cors';
+import router from "./routes/user";
+
+const cookiePaser = require('cookie-parser')
+const SERVER_PORT = 5001;
 
 AppDataSource.initialize().then(async () => {
 
     // create express app
     const app = express();
+
+    const allowedOrigins = ['http://localhost:3000'];
+
+    const options: cors.CorsOptions = {
+        origin: allowedOrigins,
+        credentials: true,
+        exposedHeaders: ['Content-disposition', 'x-access-token']
+    };
+
+    app.use(cors(options));
+    app.use(cookiePaser())
+
+    app.use('/stripe/webhook', bodyParser.raw({type: "*/*"}))
     app.use(bodyParser.json());
 
     app.use('/', routes)
-    // register express routes from defined application routes
-    // Routes.forEach(route => {
-    //     (app as any)[route.method](route.route, (req: Request, res: Response, next: Function) => {
-    //         const result = (new (route.controller as any))[route.action](req, res, next);
-    //         if (result instanceof Promise) {
-    //             result.then(result => result !== null && result !== undefined ? res.send(result) : undefined);
-    //
-    //         } else if (result !== null && result !== undefined) {
-    //             res.json(result);
-    //         }
-    //     });
-    // });
 
     // setup express app here
     // ...

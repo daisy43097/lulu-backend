@@ -1,50 +1,56 @@
 import {
     Column,
-    Entity,
+    Entity, JoinColumn,
     ManyToOne, OneToOne,
     PrimaryGeneratedColumn,
-    UpdateDateColumn
 } from "typeorm";
 import {Min} from "class-validator";
 import {User} from "./User";
-import {JoinTable} from "typeorm";
+import {BaseClass} from "./BaseClass";
 import {Payment} from "./Payment";
 
-
-
 @Entity()
-export class Order {
+export class Order extends BaseClass{
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column('decimal', {precision: 5, scale: 2})
-    price: number;
-
-    @Column('decimal', {precision: 5, scale: 2, default: 1.00})
-    @Min(1)
-    taxRate: number;
-
-    @Column('decimal', {precision: 5, scale: 2})
-    total: number;
-
-    @OneToOne(() => Payment, payment => payment.order)
+    @OneToOne(() => Payment, (payment) => payment.order, { cascade: true })
+    @JoinColumn()
     payment: Payment;
 
     @ManyToOne(() => User, user => user.orders)
+    // @JoinColumn({ name: "user_id" })
     user: User
 
     @Column()
-    isActive: boolean;
+    products: string;
 
-    @Column()
-    isDelete: boolean;
+    @Column({
+        type: 'enum',
+        enum: ['processing', 'processed'],
+        default: 'processing'
+    })
+    status: string;
+}
 
-    @Column()
-    @UpdateDateColumn()
-    createAt: Date;
+export interface ProductDTO {
+    title: string
+    price: string
+    size: string
+    color: string
+    colorId: string
+    image: string
+    productId: string
+    quantity: string
+}
 
-    @Column()
-    @UpdateDateColumn()
-    updateAt: Date;
-
+export interface OrderDTO{
+    id: number
+    payment: Payment
+    products: ProductDTO[]
+    status: string
+    updateAt: Date
+    createAt: Date
+    isDelete: boolean
+    isActive: boolean
 }

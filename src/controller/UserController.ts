@@ -1,19 +1,14 @@
-import {getRepository} from "typeorm";
 import {NextFunction, Request, Response} from "express";
 import {User} from "../entity/User";
 import {SALT_ROUNDS} from "../helper/const";
 import {validate} from "class-validator";
 import {Err, ErrStr, HttpCode} from "../helper/Err";
-import {AppDataSource} from "../data-source";
+import {AuthController} from "./AuthController";
 
 const bcrypt = require('bcrypt')
 
 
-export class UserController {
-
-    // public static get repo() {
-    //     return getRepository(User)
-    // }
+export class UserController extends AuthController{
 
     static async all(request: Request, response: Response, next: NextFunction) {
         return response.send('get all users')
@@ -25,29 +20,49 @@ export class UserController {
         return response.send(`get one ${userId}`)
     }
 
-    static async create(request: Request, response: Response, next: NextFunction) {
+    static async register(request: Request, response: Response, next: NextFunction) {
         let {email, password, firstName, lastName} = request.body
-        bcrypt.hash(password, SALT_ROUNDS, (err, hash) => {
-            let user: User = User.create({
-                email: email,
-                password: hash,
-                firstName: firstName,
-                lastName: lastName
-            })
 
+        const salt = await bcrypt.genSalt(SALT_ROUNDS)
+        const hash = await bcrypt.hash(password, salt)
 
-            validate(user).then(errors => {
-                if (errors.length >= 1) {
-                    return response.status(400).send(new Err(HttpCode.E400, ErrStr.ErrMissingParameter))
-                }
+        let user = User.create({email, password: hash, firstName, lastName})
 
-                user.save()
-                UserController.repo.save(user).then(() => response.status(200).send(new Err())).catch(e => {
-                    console.log('error writing to db')
-                    return response.status(400).send(new Err(HttpCode.E400, ErrStr.ErrStore, e))
+        const errors = await validate(user)
+        if (errors.length > 0) {
+            return response.status(400).send(new Err(HttpCode.E400, ErrStr.ErrMissingParameter))
+        }
+
+        await user.save()
+        return response.status(200).send(new Err())
+
+    }
+
+    static async login(request: Request, response: Response, next: NextFunction) {
+        const {email, password} = request.body
+
+        let user: User
+        let accessToken: string
+        try {
+            user = await User.findOneOrFail({where: {email}})
+            const dbPassword = user.password
+
+            const match = await bcrypt.compare(password, dbPassword)
+            if (!match) {
+                return response.status(401).send(new Err(HttpCode.E401, ErrStr.ErrPassword))
+            } else {
+                accessToken = UserController.createToken(user)
+
+                response.cookie('access-token', accessToken, {
+                    maxAge: 60*60*24*30*1000,
+                    httpOnly:true
                 })
-            })
-        })
+            }
+        } catch (e) {
+            return response.status(401).send(new Err(HttpCode.E401, ErrStr.ErrNoUser, e))
+        }
+
+        return response.status(200).send(new Err(HttpCode.E200, ErrStr.OK, {auth: true, userId: user.id, email: user.email, userName: user.firstName }))//delete token
     }
 
     static async delete(request: Request, response: Response, next: NextFunction) {

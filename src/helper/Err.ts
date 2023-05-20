@@ -12,9 +12,13 @@ export enum ErrStr {
     ErrNoObj = 'Can not find the record',
     ErrStore = 'Failed to store data',
     ErrDel = 'Failed to delete data',
+    ErrNoUser = `User doesn't exist`,
+    ErrPassword = `Wrong password`,
+    ErrAuth = `User not authenticated`,
 
     //Parameter
     ErrMissingParameter = 'Missing parameter'
+
 }
 
 export class Err {

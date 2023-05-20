@@ -1,10 +1,11 @@
 import {Entity, PrimaryGeneratedColumn, Column, OneToMany, Unique} from "typeorm"
 import {IsEmail} from "class-validator";
 import {Order} from "./Order";
+import {BaseClass} from "./BaseClass";
+import {ShoppingBag} from "./ShoppingBag";
 
 @Entity()
-@Unique(['email'])
-export class User {
+export class User extends BaseClass{
 
     @PrimaryGeneratedColumn()
     id: number
@@ -18,13 +19,15 @@ export class User {
     @Column()
     password: string
 
-    @Column()
+    @Column({
+        unique: true
+    })
     @IsEmail()
     email: string
 
-    @Column({default: true})
-    isActive: boolean
-
     @OneToMany(() => Order, order => order.user)
     orders: Order[]
+    //
+    // @OneToMany(() => ShoppingBag, shoppingBag => shoppingBag.user)
+    // shoppingBag: ShoppingBag[]
 }

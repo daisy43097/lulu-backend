@@ -1,23 +1,16 @@
 import {
     Column,
-    Entity, JoinColumn,
-    ManyToMany,
-    ManyToOne, OneToOne,
+    Entity, JoinColumn, OneToOne,
     PrimaryGeneratedColumn,
-    UpdateDateColumn
 } from "typeorm";
+import {BaseClass} from "./BaseClass";
 import {Min} from "class-validator";
-import {User} from "./User";
-import {JoinTable} from "typeorm";
 import {Order} from "./Order";
 
 @Entity()
-export class Payment {
+export class Payment extends BaseClass{
     @PrimaryGeneratedColumn()
     id: number;
-
-    @Column('decimal', {precision: 5, scale: 2})
-    price: number;
 
     @Column('decimal', {precision: 5, scale: 2, default: 1.00})
     @Min(1)
@@ -27,21 +20,24 @@ export class Payment {
     total: number;
 
     @OneToOne(() => Order, order => order.payment)
-    @JoinColumn()
-    order: Order;
+    order: Order
 
     @Column()
-    isActive: boolean;
+    billAddress: string;
 
     @Column()
-    isDelete: boolean;
+    shipAddress: string;
 
-    @Column()
-    @UpdateDateColumn()
-    createAt: Date;
+    @Column({nullable: true})
+    customerId: string
 
-    @Column()
-    @UpdateDateColumn()
-    updateAt: Date;
+    @Column({nullable: true})
+    paymentId: string
 
+    @Column({
+        type: 'enum',
+        enum: ['processing', 'paid'],
+        default: 'processing'
+    })
+    status: string;
 }
